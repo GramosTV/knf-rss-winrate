@@ -94,6 +94,7 @@ filtered_data = []
 
 # Create a dictionary to keep track of short positions by company for each stock
 short_positions = {}
+#Dead companies
 data = [entry for entry in data if entry['ISSUER_NAME'] not in ('CEDC', 'DWORY', 'LOTOS', 'NETIA', 'TVN', 'GETBK', 'SYNTHOS', 'GETINOBLE')]
 
 # Iterate over the original data
