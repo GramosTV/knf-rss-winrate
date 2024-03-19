@@ -45,6 +45,7 @@ for entry in data:
     issuer_name = entry['ISIN']
     issuer_name = issuer_name[2:]
     issuer_name = ''.join(char for char in issuer_name if not char.isdigit())
+    # Could be automated with a paid API, unfortunately some stocks need to be input manually with free data
     if (entry['ISIN'] == 'LU2237380790'):
         entry['ISIN'] = 'ALE'
     elif (entry['ISIN'] == 'NL0015000AU7'):
