@@ -110,7 +110,7 @@ blocked_shorts = {}
 folder_path = "records"
 file_names = os.listdir(folder_path)
 file_names = [file_name.replace('.txt', '') for file_name in file_names]
-print(file_names)
+# print(file_names)
 for entry in data:
     issuer_name = entry['ISSUER_NAME']
     holder_name = entry['HOLDER_FULL_NAME']
