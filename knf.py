@@ -5,14 +5,14 @@ import os
 days = int(input('Enter short range in days\n'))
 percent = int(input('Enter the minimal price downfall in %\n'))
 min_numer_of_shorts = int(input('Enter minimal number of shorts for the holder to be on the list\n'))
-min_winrate = int(input('Enter minimal winrate for the holder to be on the list\n'))
+min_winrate = int(input('Enter minimal winrate for the holder to be on the list in %\n'))
 print('Proccessing...\n')
 
 
 url = 'https://rss.knf.gov.pl/rss_pub/JSON'
 
 form_data = {
-    'request': '{"cmd":"get","search":[],"limit":10000,"offset":0,"method":"RssHTable","sort":[{"field":"POSITION_DATE","direction":"asc"}],"searchLogic":"AND","searchValue":""}'
+   'request': '{"cmd":"get","search":[],"limit":10000,"offset":0,"method":"RssHTable","sort":[{"field":"POSITION_DATE","direction":"asc"}],"searchLogic":"AND","searchValue":""}'
 }
 
 headers = {
@@ -107,12 +107,18 @@ data = [entry for entry in data if entry['ISSUER_NAME'] not in ('CEDC', 'DWORY',
 
 # Iterate over the original data
 blocked_shorts = {}
-
+folder_path = "records"
+file_names = os.listdir(folder_path)
+file_names = [file_name.replace('.txt', '') for file_name in file_names]
+print(file_names)
 for entry in data:
     issuer_name = entry['ISSUER_NAME']
     holder_name = entry['HOLDER_FULL_NAME']
     position_date = entry['POSITION_DATE']
+    isin = entry['ISIN']
     net_short_position = entry['NET_SHORT_POSITION_O']
+    if isin.lower() not in file_names:
+        continue
     # print(blocked_shorts)
     # Check if this holder is blocked for this issuer name
     if holder_name in blocked_shorts.get(issuer_name, set()):
@@ -183,7 +189,7 @@ successful_shorts = sum(1 for entry in filtered_data if is_short_successful(entr
 # Calculate success rate
 success_rate = (successful_shorts / total_shorts) * 100 if total_shorts > 0 else 0
 
-print(f"Success Rate: {success_rate:.2f}%\n")
+print(f"Average Success Rate For All Holders: {success_rate:.2f}%\n")
 
 
 holder_shorts = {}
