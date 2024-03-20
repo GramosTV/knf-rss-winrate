@@ -1,6 +1,14 @@
 import requests
 from datetime import datetime, timedelta
 import os
+
+days = int(input('Enter short range in days\n'))
+percent = int(input('Enter the minimal price downfall in %\n'))
+min_numer_of_shorts = int(input('Enter minimal number of shorts for the holder to be on the list\n'))
+min_winrate = int(input('Enter minimal winrate for the holder to be on the list\n'))
+print('Proccessing...\n')
+
+
 url = 'https://rss.knf.gov.pl/rss_pub/JSON'
 
 form_data = {
@@ -98,17 +106,28 @@ short_positions = {}
 data = [entry for entry in data if entry['ISSUER_NAME'] not in ('CEDC', 'DWORY', 'LOTOS', 'NETIA', 'TVN', 'GETBK', 'SYNTHOS', 'GETINOBLE')]
 
 # Iterate over the original data
+blocked_shorts = {}
+
 for entry in data:
     issuer_name = entry['ISSUER_NAME']
     holder_name = entry['HOLDER_FULL_NAME']
     position_date = entry['POSITION_DATE']
-    if (entry['NET_SHORT_POSITION_O']) == '&lt;0,5':
-        continue
-    # If the stock has not been shorted by this company in the past 365 days, include this entry
-    if issuer_name not in short_positions.get(holder_name, {}) or (position_date - short_positions[holder_name][issuer_name]).days >= 400:
-        filtered_data.append(entry)
-        # Update the short positions dictionary
-        short_positions.setdefault(holder_name, {})[issuer_name] = position_date
+    net_short_position = entry['NET_SHORT_POSITION_O']
+    # print(blocked_shorts)
+    # Check if this holder is blocked for this issuer name
+    if holder_name in blocked_shorts.get(issuer_name, set()):
+        # If yes, check if NET_SHORT_POSITION_O is less than 0.5
+        if net_short_position == '&lt;0,5':
+            # If NET_SHORT_POSITION_O is less than 0.5, remove the block for this holder and issuer name
+            blocked_shorts[issuer_name].remove(holder_name)
+            continue
+    else:
+        # If not blocked, process the entry
+        if net_short_position != '&lt;0,5':
+            # If NET_SHORT_POSITION_O is not less than 0.5, add this holder to blocked shorts for this issuer name
+            blocked_shorts.setdefault(issuer_name, set()).add(holder_name)
+            filtered_data.append(entry)
+            continue  # Skip further processing if the holder is blocked for this issuer name
 
 # Print the filtered data
 # for entry in filtered_data:
@@ -146,13 +165,13 @@ def is_short_successful(start_date, isin):
             break
 
     # Check the next 10 candles
-    for i in range(start_index, start_index + 90):
+    for i in range(start_index, start_index + days):
         if i >= len(candles):
             return False
         _, start_price = candles[start_index]
         _, current_price = candles[i]
         percentage_change = calculate_percentage_change(start_price, current_price)
-        if percentage_change <= -3:
+        if percentage_change <= -percent:
             return True
 
     return False
@@ -164,7 +183,7 @@ successful_shorts = sum(1 for entry in filtered_data if is_short_successful(entr
 # Calculate success rate
 success_rate = (successful_shorts / total_shorts) * 100 if total_shorts > 0 else 0
 
-print(f"Success Rate: {success_rate:.2f}%")
+print(f"Success Rate: {success_rate:.2f}%\n")
 
 
 holder_shorts = {}
@@ -181,8 +200,10 @@ for entry in filtered_data:
         holder_shorts[holder_name]['successful'] += 1
 
 # Sort holders by winrate
+
+
 sorted_holders = sorted(holder_shorts.items(), key=lambda x: x[1]['successful'] / x[1]['total'] if x[1]['total'] > 0 else 0, reverse=True)
-filtered_holders = [(holder, stats) for holder, stats in sorted_holders if stats['total'] >= 0 and (stats['successful'] / stats['total']) * 100 > 50]
+filtered_holders = [(holder, stats) for holder, stats in sorted_holders if stats['total'] >= min_numer_of_shorts and (stats['successful'] / stats['total']) * 100 > min_winrate]
 # filtered_holders = sorted_holders
 # Print winrate, amount of shorts, and rank for each holder
 print("Winrate for each holder (Ranked by Winrate):")
