@@ -208,11 +208,17 @@ for entry in filtered_data:
 # Sort holders by winrate
 
 
-sorted_holders = sorted(holder_shorts.items(), key=lambda x: x[1]['successful'] / x[1]['total'] if x[1]['total'] > 0 else 0, reverse=True)
-filtered_holders = [(holder, stats) for holder, stats in sorted_holders if stats['total'] >= min_numer_of_shorts and (stats['successful'] / stats['total']) * 100 > min_winrate]
-# filtered_holders = sorted_holders
+# SORT BY WINRATE
+# sorted_holders = sorted(holder_shorts.items(), key=lambda x: x[1]['successful'] / x[1]['total'] if x[1]['total'] > 0 else 0, reverse=True)
+
+# SORT BY SHORT AMOUNT
+sorted_holders = sorted(holder_shorts.items(), key=lambda x: x[1]['total'], reverse=True)
+
+
+filtered_holders = [(holder, stats) for holder, stats in sorted_holders if stats['total'] >= min_numer_of_shorts and (stats['successful'] / stats['total']) * 100 >= min_winrate]
 # Print winrate, amount of shorts, and rank for each holder
-print("Winrate for each holder (Ranked by Winrate):")
+
+print("Winrate for each holder:")
 for rank, (holder, stats) in enumerate(filtered_holders, start=1):
     winrate = (stats['successful'] / stats['total']) * 100 if stats['total'] > 0 else 0
     print(f"{rank}. {holder}: Winrate: {winrate:.2f}%, Amount of Shorts: {stats['total']}")
